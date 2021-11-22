@@ -1,30 +1,32 @@
 #include <WiFi.h>
 
+// Constante para definir rede a ser conectada
 const char* ssid = "RouterTest";
 const char* password = "routertest";
 
-// Setting Static IP.
+// Define um IP estático
 IPAddress local_IP(192, 168, 0, 150);
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
-WiFiServer server(80); // Port 80
+WiFiServer server(80);
 
 #define LED32  32    // LED port32
+
 String estado = "";
-int wait30 = 30000; // time to reconnect when connection is lost.
+int wait30 = 30000; // timer usado em caso de desconexões
 
 void setup() {
   Serial.begin(9600);
   pinMode(LED32, OUTPUT);
 
-  // Setting Static IP.
+  // Configura o IP estático
   if (!WiFi.config(local_IP, gateway, subnet)) {
-    Serial.println("Error in configuration.");
+    Serial.println("Erro em configurar a rede.");
   }
 
-  // Connect WiFi net.
+  // Conecta a rede WI-FI
   Serial.println();
-  Serial.print("Connecting with ");
+  Serial.print("Conectando-se com rede: ");
   Serial.println(ssid);
 
   WiFi.begin(ssid, password);
@@ -33,41 +35,41 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("Connected with WiFi.");
+  Serial.println("Conectado a rede WiFi.");
 
-  // Start Web Server.
+  // Inicia o servidor web
   server.begin();
-  Serial.println("Web Server started.");
+  Serial.println("Servidor Web iniciado.");
 
-  // This is IP
-  Serial.print("This is IP to connect to the WebServer: ");
+  // Mostra o IP do microcontrolador na serial
+  Serial.print("IP para se conectar ao servidor web: ");
   Serial.print("http://");
   Serial.println(WiFi.localIP());
 }
 
 void loop() {
-  // If disconnected, try to reconnect every 30 seconds.
+  // Se desconectado da rede, tenta reconectar a cada 30 segundos
   if ((WiFi.status() != WL_CONNECTED) && (millis() > wait30)) {
-    Serial.println("Trying to reconnect WiFi...");
+    Serial.println("Tentando reconectar a rede Wi-Fi...");
     WiFi.disconnect();
     WiFi.begin(ssid, password);
     wait30 = millis() + 30000;
   }
-  // Check if a client has connected..
+  // Confere se o cliente se conectou
   WiFiClient client = server.available();
   if (!client) {
     return;
   }
 
-  Serial.print("New client: ");
+  Serial.print("Novo Cliente: ");
   Serial.println(client.remoteIP());
 
-  // Espera hasta que el cliente envíe datos.
+  // Espera que o cliente envie alguns dados
   while (!client.available()) {
     delay(1);
   }
 
-  // Read the information sent by the client.
+  // Le as informações enviadas pelo cliente.
   String req = client.readStringUntil('\r');
   Serial.println(req);
 
@@ -90,5 +92,4 @@ void loop() {
 
   client.flush();
   client.stop();
-  Serial.println("Client disconnected.");
 }
